@@ -1,0 +1,38 @@
+diff -ur cuckooTest/conf/cuckoo.conf cuckoo/conf/cuckoo.conf
+--- cuckooTest/conf/cuckoo.conf	2012-07-11 14:31:39.229131488 +0200
++++ cuckoo/conf/cuckoo.conf	2012-07-11 13:00:20.472932879 +0200
+@@ -18,7 +18,7 @@
+ # Specify the name of the machine manager module to use, this module will
+ # define the interaction between Cuckoo and your virtualization software
+ # of choice.
+-machine_manager = kvm
++machine_manager = virtualbox
+ 
+ # Enable or disable the use of an external sniffer (tcpdump) [yes/no].
+ use_sniffer = yes
+@@ -29,10 +29,10 @@
+ 
+ # Specify the network interface name on which tcpdump should monitor the
+ # traffic. Make sure the interface is active.
+-interface = virbr0
++interface = vboxnet0
+ 
+ # Do a full memory dump of the VM _brefore_ the sample runs. This dump can be analysed with volatility
+ do_predump = no
+ 
+ # Do a full memory dump of the VM _after_ the sample ran. This dump can be analysed with volatility
+-do_postdump = no
++do_postdump = yes
+diff -ur cuckooTest/conf/virtualbox.conf cuckoo/conf/virtualbox.conf
+--- cuckooTest/conf/virtualbox.conf	2012-07-11 14:29:28.785126760 +0200
++++ cuckoo/conf/virtualbox.conf	2012-07-11 12:51:32.216913729 +0200
+@@ -11,7 +11,7 @@
+ [cuckoo1]
+ # Specify the label name of the current machine as specified in your
+ # VirtualBox configuration.
+-label = cuckoo1
++label = Cuckoo1
+ 
+ # Specify the operating system platform used by current machine
+ # [windows/darwin/linux].
+

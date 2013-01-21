@@ -1,0 +1,77 @@
+# This diff patch is a copy of the changes suggested by Thorsten-Sick.
+# https://github.com/Thorsten-Sick/cuckoo/commit/a513742be6682b2832252191ac26ac0783030fe2#L0R35
+diff -ur cuckooOrig/conf/cuckoo.conf cuckoo/conf/cuckoo.conf
+--- cuckooOrig/conf/cuckoo.conf	2012-07-11 12:16:00.788836463 +0200
++++ cuckoo/conf/cuckoo.conf	2012-07-11 12:18:15.384841342 +0200
+@@ -30,3 +30,9 @@
+ # Specify the network interface name on which tcpdump should monitor the
+ # traffic. Make sure the interface is active.
+ interface = virbr0
++
++# Do a full memory dump of the VM _brefore_ the sample runs. This dump can be analysed with volatility
++do_predump = no
++
++# Do a full memory dump of the VM _after_ the sample ran. This dump can be analysed with volatility
++do_postdump = no
+diff -ur cuckooOrig/lib/cuckoo/common/abstracts.py cuckoo/lib/cuckoo/common/abstracts.py
+--- cuckooOrig/lib/cuckoo/common/abstracts.py	2012-07-11 12:16:00.796836463 +0200
++++ cuckoo/lib/cuckoo/common/abstracts.py	2012-07-11 12:12:18.048828389 +0200
+@@ -118,6 +118,14 @@
+         """
+         raise NotImplementedError
+ 
++    def memdump(self, label, filename):
++        """Dump the memory of the whole machine
++        @param label: machine name.
++        @param filename: target filename.
++        @raise NotImplementedError: this method is abstract.
++        """
++        raise NotImplementedError
++
+     def _list(self):
+         """Lists virtual machines configured.
+         @raise NotImplementedError: this method is abstract.
+diff -ur cuckooOrig/lib/cuckoo/core/scheduler.py cuckoo/lib/cuckoo/core/scheduler.py
+--- cuckooOrig/lib/cuckoo/core/scheduler.py	2012-07-11 12:16:00.796836463 +0200
++++ cuckoo/lib/cuckoo/core/scheduler.py	2012-07-11 12:13:09.332830247 +0200
+@@ -126,10 +126,16 @@
+             mmanager.start(vm.label)
+             # Initialize guest manager
+             guest = GuestManager(vm.ip, vm.platform)
++            # Pre memdump
++            if self.cfg.cuckoo.do_predump:
++                mmanager.memdump(vm.label, os.path.join(self.analysis.results_folder,"pre.memdump"))
+             # Launch analysis
+             guest.start_analysis(options)
+             # Wait for analysis to complete
+             success = guest.wait_for_completion()
++            # Post memdump
++            if self.cfg.cuckoo.do_postdump:
++                mmanager.memdump(vm.label, os.path.join(self.analysis.results_folder,"post.memdump"))
+             # Stop sniffer
+             if sniffer:
+                 sniffer.stop()
+diff -ur cuckooOrig/modules/machinemanagers/virtualbox.py cuckoo/modules/machinemanagers/virtualbox.py
+--- cuckooOrig/modules/machinemanagers/virtualbox.py	2012-07-11 12:16:00.804836463 +0200
++++ cuckoo/modules/machinemanagers/virtualbox.py	2012-07-11 12:03:55.704810178 +0200
+@@ -58,6 +58,20 @@
+         except OSError as e:
+             raise CuckooMachineError("VBoxManage failed restoring the machine: %s" % e.message)
+ 
++    def memdump(self, label, filename):
++        """Dump the memory of the whole machine
++        @param label: machine name.
++        @param filename: target filename.
++        @raise NotImplementedError: this method is abstract.
++        """
++        try:
++            if subprocess.call(["VBoxManage", "debugvm", label, "dumpguestcore", "--filename", filename],
++                               stdout=subprocess.PIPE,
++                               stderr=subprocess.PIPE):
++                raise CuckooMachineError("VBoxManage exited with error memdumping vm")
++        except OSError:
++            raise CuckooMachineError("VBoxManage OS error memdumping vm or file not found")
++
+     def _list(self):
+         """Lists virtual machines installed.
+         @return: virtual machine names list.

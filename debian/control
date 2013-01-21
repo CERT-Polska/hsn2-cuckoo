@@ -1,0 +1,8 @@
+Package: hsn2-cuckoo
+Version: {VER}
+Section: unknown
+Priority: optional
+Architecture: all
+Depends: python, python-hsn2-lib
+Maintainer: Wojciech Michalak (wojciech.michalak@nask.pl)
+Description: HSN2 Cuckoo Service. It utilises the Cuckoo Sandbox. Cuckoo has to be installed and configured separately.

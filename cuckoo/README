@@ -1,0 +1,11 @@
+The procmon packages require procmon to be in the following path on the guest machine:
+	C:\\Procmon\Procmon.exe
+	
+The volatility processor has the following Python dependencies:
+	* volatility 2.0
+	* yara
+	* pefile
+	* distorm3
+	* malware.py volatilty plugin r134 (https://malwarecookbook.googlecode.com/svn-history/r134/trunk/malware.py)
+
+	
