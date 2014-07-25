@@ -24,27 +24,28 @@ import re
 import tempfile
 import json
 
+log = logging.getLogger(__name__)
+
 MISSING_DEPENDENCIES = []
 
 try:
     import volatility
     import volatility.constants as constants
-    if constants.VERSION != "2.0":
-        MISSING_DEPENDENCIES.append("volatility 2.0")
-    else:
-        import volatility.registry as MemoryRegistry
-        import volatility.utils as exceptions
-        import volatility.obj as volobj
-        import volatility.debug as debug
-        import volatility.protos as protos
-        import volatility.conf as conf
-        import volatility.cache as cache
+    import volatility.commands as commands
+    import volatility.registry as MemoryRegistry
+    import volatility.utils as exceptions
+    import volatility.obj as volobj
+    import volatility.debug as debug
+    import volatility.protos as protos
+    import volatility.conf as conf
+    import volatility.cache as cache
 except ImportError:
     MISSING_DEPENDENCIES.append("volatility 2.0")
 
 try:
-    from volatility.plugins.malware import wctomb, get_flags, SERVICE_TYPES, SERVICE_STATES
-except ImportError:
+    import volatility.plugins.malware as malware
+except ImportError as e:
+    log.error(e)
     MISSING_DEPENDENCIES.append("malware.py volatility plugin")
 
 try:
@@ -73,7 +74,6 @@ from lib.cuckoo.common.abstracts import Processing
 sys.path.append(os.path.join(CUCKOO_ROOT, 'conf', 'volatility'))
 from volatilityprocessorruleloader import VolatilityProcessorRuleLoader as vprl
 
-log = logging.getLogger(__name__)
 
 class VolatilityAnalysis(Processing):
     """Volatility memory dump analysis."""
@@ -110,9 +110,9 @@ class VolatilityAnalysis(Processing):
         self.volatilityConfig = conf.ConfObject()
         self.volatilityConfig.final = True
         self.volatilityConfig.verbose = False
-        cache.disable_caching(None, None, None, None)
-        MemoryRegistry.Init()
-        self.key = "volatility"
+        
+        
+        self.key = "volatility_hsn"
 
     def preConfigure(self):
         '''
@@ -123,7 +123,7 @@ class VolatilityAnalysis(Processing):
             log.warning("Dependencies missing: %s, skip" % ','.join(MISSING_DEPENDENCIES))
             return False
 
-        memdumpPath = os.path.abspath(os.path.join(self.analysis_path, 'post.memdump'))
+        memdumpPath = self.memory_path
         if not os.path.isfile(memdumpPath):
             log.warning("Memory dump '%s' not found for Volatility, skip" % memdumpPath)
             return False
@@ -136,7 +136,7 @@ class VolatilityAnalysis(Processing):
         if not self.setVolatilityProfile():
             log.warning("Couldn't determine which volatility profile to use, skip")
             return False
-
+        MemoryRegistry.PluginImporter()
         return True
 
     def setExternalParameters(self):
@@ -268,14 +268,16 @@ class VolatilityAnalysis(Processing):
     def runModule(self, module, method = "calculate"):
         log.debug("Attempting to run %s" % module)
         try:
-            if module in MemoryRegistry.PLUGIN_COMMANDS.commands:
-                command = MemoryRegistry.PLUGIN_COMMANDS.commands[module](self.volatilityConfig)
+                log.debug("pre %s" % method)
+                command = MemoryRegistry.get_plugin_classes(commands.Command, lower=True)[module](self.volatilityConfig)
                 self.volatilityConfig.parse_options()
                 if method:
+                    log.debug("method %s" % method)
                     return getattr(command, method)()
                 else:
+                    log.debug("command %s" % method)
                     return command
-        except exceptions.VolatilityException, e:
+        except Exception as e:
             log.error(e)
 
     def runHeuristic(self, gather, filter = None):
@@ -387,13 +389,13 @@ class VolatilityAnalysis(Processing):
         svcScan = self.runModule('svcscan')
         objects = {}
         for rec in svcScan:
-            Type = '|'.join(get_flags(SERVICE_TYPES, rec.Type))
-            State = '|'.join(get_flags(SERVICE_STATES, rec.State))
+            Type = '|'.join(malware.get_flags(malware.SERVICE_TYPES, rec.Type))
+            State = '|'.join(malware.get_flags(malware.SERVICE_STATES, rec.State))
             if 'SERVICE_KERNEL_DRIVER' in Type or 'SERVICE_FILE_SYSTEM_DRIVER' in Type:
-                Binary = wctomb(rec.Binary1, rec.obj_vm)
+                Binary = malware.wctomb(rec.Binary1, rec.obj_vm)
                 ProcId = '-'
             else:
-                Binary = wctomb(rec.Binary2.ServicePath, rec.obj_vm)
+                Binary = malware.wctomb(rec.Binary2.ServicePath, rec.obj_vm)
                 ProcId = rec.Binary2.ProcessId
             if Binary is None:
                 Binary = '-'
@@ -401,7 +403,7 @@ class VolatilityAnalysis(Processing):
                 ProcId = '-'
             obj = {
                    'pid' : str(ProcId),
-                   'name' : wctomb(rec.ServiceName, rec.obj_vm),
+                   'name' : malware.wctomb(rec.ServiceName, rec.obj_vm),
                    'state' : str(State),
                    'path' : str(Binary),
                 }
