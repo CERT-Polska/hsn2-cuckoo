@@ -28,9 +28,7 @@ sys.path.append("/opt/hsn2/python/commlib")
 from hsn2taskprocessor import HSN2TaskProcessor
 from hsn2taskprocessor import ParamException, ProcessingException
 from hsn2osadapter import ObjectStoreException
-import hsn2objectwrapper as ow
 import logging
-import subprocess
 import os
 import time
 import tempfile

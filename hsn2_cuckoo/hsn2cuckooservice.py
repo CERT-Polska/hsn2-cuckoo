@@ -17,25 +17,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-'''
-Created on 30-05-2012
-
-@author: wojciechm
-'''
-
 import sys
 sys.path.append("/opt/hsn2/python/commlib")
 from hsn2service import HSN2Service
 from hsn2cuckootaskprocessor import CuckooTaskProcessor
 from hsn2service import startService
-from os import access
 from os import path
 import logging
-'''
-Created on 23-03-2012
 
-@author: wojciechm
-'''
 
 class CuckooService(HSN2Service):
 	serviceName = "cuckoo"
