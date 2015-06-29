@@ -23,20 +23,21 @@ Created on 30-05-2012
 @author: wojciechm
 '''
 
-import sys
-sys.path.append("/opt/hsn2/python/commlib")
-from hsn2taskprocessor import HSN2TaskProcessor
-from hsn2taskprocessor import ParamException, ProcessingException
-from hsn2osadapter import ObjectStoreException
+import base64
+import hashlib
+import json
 import logging
 import os
-import time
-import tempfile
-import hashlib
 import shutil
 import sqlite3
-import json
-import base64
+import sys
+import tempfile
+import time
+
+from hsn2_commons.hsn2osadapter import ObjectStoreException
+from hsn2_commons.hsn2taskprocessor import HSN2TaskProcessor
+from hsn2_commons.hsn2taskprocessor import ParamException, ProcessingException
+
 
 def md5File(filePath):
 	return hashlib.md5(open(filePath).read()).hexdigest()

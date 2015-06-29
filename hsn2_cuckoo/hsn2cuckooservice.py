@@ -17,13 +17,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
-sys.path.append("/opt/hsn2/python/commlib")
-from hsn2service import HSN2Service
-from hsn2cuckootaskprocessor import CuckooTaskProcessor
-from hsn2service import startService
-from os import path
 import logging
+from os import path
+
+from hsn2_commons.hsn2service import HSN2Service
+from hsn2_commons.hsn2service import startService
+from hsn2cuckootaskprocessor import CuckooTaskProcessor
 
 
 class CuckooService(HSN2Service):
