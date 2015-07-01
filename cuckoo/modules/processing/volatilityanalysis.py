@@ -1,7 +1,7 @@
 # Copyright (c) NASK, NCSC
-# 
+#
 # This file is part of HoneySpider Network 2.0.
-# 
+#
 # This is a free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -63,7 +63,6 @@ except ImportError:
     MISSING_DEPENDENCIES.append("distorm3")
 
 
-
 if __name__ == "__main__":
     sys.path.append('../../')
 from lib.cuckoo.common.constants import CUCKOO_ROOT
@@ -75,38 +74,40 @@ from volatilityprocessorruleloader import VolatilityProcessorRuleLoader as vprl
 
 log = logging.getLogger(__name__)
 
+
 class VolatilityAnalysis(Processing):
     """Volatility memory dump analysis."""
     volatilityConfig = None
     analysisConfig = None
     rulePath = os.path.join(CUCKOO_ROOT, 'conf', 'volatility')
-    params = {
-        "rating_whitelist" : 0.5,
-        "rating_services" : 0.5,
-        "rating_hidden" : 1.5,
-        "rating_orphan" : 1.5,
-        "rating_api_unknown" : 1.5,
-        "rating_api_known" : 0.5,
-        "rating_malfind_pe" : 1.5,
-        "rating_malfind" : 0.5,
-        "none" : 0
-    }
-
-    tagToRating = {
-        "connected_processes" : "rating_whitelist",
-        "running_services" : "rating_services",
-        "hidden_processes" : "rating_hidden",
-        "orphan_threads" : "rating_orphan",
-        "api_hooks_unknown" : "rating_api_unknown",
-        "api_hooks_known" : "rating_api_known",
-        "malfind_executable" : "rating_malfind_pe",
-        "malfind_no_executable" : "rating_malfind",
-        "none" : "none"
-    }
-
-    rules = {}
+    params = None
+    tagToRating = None
+    rules = None
 
     def __init__(self):
+        self.params = {
+            "rating_whitelist": 0.5,
+            "rating_services": 0.5,
+            "rating_hidden": 1.5,
+            "rating_orphan": 1.5,
+            "rating_api_unknown": 1.5,
+            "rating_api_known": 0.5,
+            "rating_malfind_pe": 1.5,
+            "rating_malfind": 0.5,
+            "none": 0
+        }
+        self.tagToRating = {
+            "connected_processes": "rating_whitelist",
+            "running_services": "rating_services",
+            "hidden_processes": "rating_hidden",
+            "orphan_threads": "rating_orphan",
+            "api_hooks_unknown": "rating_api_unknown",
+            "api_hooks_known": "rating_api_known",
+            "malfind_executable": "rating_malfind_pe",
+            "malfind_no_executable": "rating_malfind",
+            "none": "none"
+        }
+        self.rules = {}
         self.volatilityConfig = conf.ConfObject()
         self.volatilityConfig.final = True
         self.volatilityConfig.verbose = False
@@ -180,13 +181,13 @@ class VolatilityAnalysis(Processing):
         """Run volatility processing.
         @return: list with matches.
         """
-        matches = { 'connected_processes':None,
-                'running_services': None,
-                'hidden_processes': None,
-                'orphan_threads': None,
-                'api_hooks':None,
-                'malfind': None
-            }
+        matches = {'connected_processes': None,
+                   'running_services': None,
+                   'hidden_processes': None,
+                   'orphan_threads': None,
+                   'api_hooks': None,
+                   'malfind': None
+                   }
 
         if not self.preConfigure():
             return {}
@@ -216,7 +217,7 @@ class VolatilityAnalysis(Processing):
         '''
         Gets called in order to set the profile which will be used when processing the dump file.
         If a profile was supplied and it exists then the profile is set and the function returns.
-        If a profile wasn't supplied or it doesn't exist then detection if performed by calling self.detectSystem. 
+        If a profile wasn't supplied or it doesn't exist then detection if performed by calling self.detectSystem.
         @return: True if successfully determined and set the profile and otherwise False.
         '''
         if self.params:
@@ -265,7 +266,7 @@ class VolatilityAnalysis(Processing):
             result = path.split(str)
         return result
 
-    def runModule(self, module, method = "calculate"):
+    def runModule(self, module, method="calculate"):
         log.debug("Attempting to run %s" % module)
         try:
             if module in MemoryRegistry.PLUGIN_COMMANDS.commands:
@@ -275,10 +276,10 @@ class VolatilityAnalysis(Processing):
                     return getattr(command, method)()
                 else:
                     return command
-        except exceptions.VolatilityException, e:
+        except exceptions.VolatilityException as e:
             log.error(e)
 
-    def runHeuristic(self, gather, filter = None):
+    def runHeuristic(self, gather, filter=None):
         objects = gather()
         log.debug(str(objects))
         if filter:
@@ -295,28 +296,28 @@ class VolatilityAnalysis(Processing):
         objects = {}
 
         for sock_obj in sockScan:
-            obj = {   'pid' : str(sock_obj.Pid),
-                      'source port' : str(sock_obj.LocalPort),
-                      'source port int' : int(sock_obj.LocalPort),
-                      'destination port' : None, # will be overridden by connScan result if found
-                      'protocol' : protos.protos.get(sock_obj.Protocol.v(), "-"),
-                      'ip' : str(sock_obj.LocalIpAddress)  }
+            obj = {'pid': str(sock_obj.Pid),
+                   'source port': str(sock_obj.LocalPort),
+                   'source port int': int(sock_obj.LocalPort),
+                   'destination port': None,  # will be overridden by connScan result if found
+                   'protocol': protos.protos.get(sock_obj.Protocol.v(), "-"),
+                   'ip': str(sock_obj.LocalIpAddress)}
             log.debug("SOCK OBJ - %s" % str(obj))
             if objects.get(obj['pid']) is None:
-                 objects[obj['pid']] = {'filename': None, 'path' : None}
+                objects[obj['pid']] = {'filename': None, 'path': None}
             objects[obj['pid']][obj['source port']] = obj
 
         for tcp_obj in connScan:
-            obj = { 'source port' : str(tcp_obj.LocalPort),
-                'source port int' : int(tcp_obj.LocalPort),
-                'destination port' : int(tcp_obj.RemotePort),
-                'remote ip' : str(tcp_obj.RemoteIpAddress),
-                'protocol' : 'TCP',
-                'ip' : str(tcp_obj.LocalIpAddress),
-                'pid' : str(tcp_obj.Pid) }
+            obj = {'source port': str(tcp_obj.LocalPort),
+                   'source port int': int(tcp_obj.LocalPort),
+                   'destination port': int(tcp_obj.RemotePort),
+                   'remote ip': str(tcp_obj.RemoteIpAddress),
+                   'protocol': 'TCP',
+                   'ip': str(tcp_obj.LocalIpAddress),
+                   'pid': str(tcp_obj.Pid)}
             log.debug("TCP OBJ - %s" % str(obj))
             if objects.get(obj['pid']) is None:
-                objects[obj['pid']] = {'filename': None, 'path' : None}
+                objects[obj['pid']] = {'filename': None, 'path': None}
 
             if objects[obj['pid']].get(obj['source port']) is None:
                 objects[obj['pid']][obj['source port']] = obj
@@ -344,8 +345,8 @@ class VolatilityAnalysis(Processing):
                             log.debug("%s skipped - diff path %s" % (pidObjs, rule['path']))
                             continue
                     elif rule['filename'] != objects[pidObjs]['filename']:
-                         log.debug("%s skipped - diff filename %s" % (pidObjs, rule['filename']))
-                         continue
+                        log.debug("%s skipped - diff filename %s" % (pidObjs, rule['filename']))
+                        continue
                 for obj in objects[pidObjs]:
                     if obj == "path" or obj == "filename":
                         continue
@@ -376,8 +377,8 @@ class VolatilityAnalysis(Processing):
                     log.debug("%s %s whitelisted" % (pidObjs, obj))
                     objects[pidObjs][obj] = None
         for pidObjs in objects:
-            objects[pidObjs] = { key:val for (key, val) in objects[pidObjs].iteritems() if bool(val) }
-        objects = { key:val for (key, val) in objects.iteritems() if len(val) > 2 }
+            objects[pidObjs] = {key: val for (key, val) in objects[pidObjs].iteritems() if bool(val)}
+        objects = {key: val for (key, val) in objects.iteritems() if len(val) > 2}
         return objects.keys()
 
     def heuristicRunningServices(self):
@@ -400,11 +401,11 @@ class VolatilityAnalysis(Processing):
             if ProcId is None or isinstance(ProcId, volobj.NoneObject):
                 ProcId = '-'
             obj = {
-                   'pid' : str(ProcId),
-                   'name' : wctomb(rec.ServiceName, rec.obj_vm),
-                   'state' : str(State),
-                   'path' : str(Binary),
-                }
+                'pid': str(ProcId),
+                'name': wctomb(rec.ServiceName, rec.obj_vm),
+                'state': str(State),
+                'path': str(Binary),
+            }
             log.debug("SVC obj: %s" % str(obj))
             if objects.get(obj['pid']) is None:
                 objects[obj['pid']] = []
@@ -433,7 +434,7 @@ class VolatilityAnalysis(Processing):
                     log.debug("%s %s whitelisted" % (pidObjs, obj))
         for pidObjs in objects:
             objects[pidObjs] = filter(bool, objects[pidObjs])
-        objects = { key:val for (key, val) in objects.iteritems() if bool(val) }
+        objects = {key: val for (key, val) in objects.iteritems() if bool(val)}
         return objects.keys()
 
     def heuristicHiddenProcesses(self):
@@ -441,13 +442,13 @@ class VolatilityAnalysis(Processing):
 
     def heuristicHiddenProcessesGather(self):
         psxView = self.runModule('psxview')
-        objects = { }
+        objects = {}
         for offset, process, ps_sources in psxView:
-            if not ps_sources['pslist'].has_key(offset) and ps_sources['psscan'].has_key(offset):
+            if offset not in ps_sources['pslist'] and offset in ps_sources['psscan']:
                 obj = {
-                       'pid' : str(process.UniqueProcessId),
-                       'name' : str(process.ImageFileName)
-                    }
+                    'pid': str(process.UniqueProcessId),
+                    'name': str(process.ImageFileName)
+                }
                 log.debug("hidden proc: %s" % str(obj))
                 objects[obj['pid']] = obj
         return objects
@@ -468,7 +469,7 @@ class VolatilityAnalysis(Processing):
 
     def heuristicApiHooksGather(self):
         apiHooks = self.runModule('apihooks')
-        objects = { }
+        objects = {}
         unknown = []
         for (proc, type, current_mod, mod, func, src, dst, hooker, instruction) in apiHooks:
             pid = str(proc.UniqueProcessId)
@@ -477,7 +478,7 @@ class VolatilityAnalysis(Processing):
                 unknown.append(pid)
                 continue
             if objects.get(pid) is None:
-                 objects[pid] = {}
+                objects[pid] = {}
             if objects[pid].get(hooker) is None:
                 objects[pid][hooker] = {}
             objects[pid][hooker][dest] = None
@@ -514,7 +515,7 @@ class VolatilityAnalysis(Processing):
                 else:
                     if rule['path'] == dll:
                         objects[dll] = None
-        objects = { key:val for (key, val) in objects.iteritems() if bool(val) }
+        objects = {key: val for (key, val) in objects.iteritems() if bool(val)}
         for key in objects:
             objects[key] = set(objects[key])
         return objects
@@ -525,7 +526,7 @@ class VolatilityAnalysis(Processing):
     def heuristicMalfindGather(self):
         self.volatilityConfig.DUMP_DIR = tempfile.gettempdir()
         malFind = self.runModule('malfind')
-        objects = {'no_executable':set(), 'executable':set()}
+        objects = {'no_executable': set(), 'executable': set()}
         for (name, pid, start, end, tag, prx, fname, hits, chunk) in malFind:
             try:
                 pefile.PE(fname)
@@ -545,7 +546,7 @@ class VolatilityAnalysis(Processing):
                     results[pid][tag] = rating
                     results[pid]["summed_rating"] += rating
                 except KeyError:
-                    results[pid] = {tag:rating, "summed_rating":rating}
+                    results[pid] = {tag: rating, "summed_rating": rating}
 
     def combineResultsForPids(self, matches):
         results = {}
@@ -566,7 +567,7 @@ class VolatilityAnalysis(Processing):
 
 if __name__ == "__main__":
     logFormatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
-    consoleHandler = logging.StreamHandler(stream = sys.stderr)
+    consoleHandler = logging.StreamHandler(stream=sys.stderr)
     consoleHandler.setFormatter(logFormatter)
     log.addHandler(consoleHandler)
     log.setLevel(logging.DEBUG)

@@ -1,7 +1,7 @@
 # Copyright (c) NASK, NCSC
-# 
+#
 # This file is part of HoneySpider Network 2.0.
-# 
+#
 # This is a free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -19,11 +19,13 @@ import re
 import os
 import sys
 
+
 class ParameterException(Exception):
     pass
 
+
 class VolatilityProcessorRuleLoader:
-    regexps = {}
+    regexps = {}  # used by class methods
 
     @staticmethod
     def toRating(val):
@@ -37,9 +39,9 @@ class VolatilityProcessorRuleLoader:
             raise ParameterException("Invalid rating value in line %d" % (lineno))
 
     @staticmethod
-    def toPortList(ports, lineno = 0):
+    def toPortList(ports, lineno=0):
         ports = ports.split('-')
-        ports = [ int(p) for p in ports ]
+        ports = [int(p) for p in ports]
         for port in ports:
             if port < 0 or port > 65535:
                 raise ParameterException("Invalid port in line %d" % lineno)
@@ -48,10 +50,10 @@ class VolatilityProcessorRuleLoader:
         return ports
 
     @classmethod
-    def connectedProcessLine(cls, line, lineno = 0):
+    def connectedProcessLine(cls, line, lineno=0):
         '''
         Processes a 'connected processes' configuration entry into a valid configuration rule.
-        If an invalid entry is found then a ParameterException is raised. 
+        If an invalid entry is found then a ParameterException is raised.
         @param line: The list with the arguments found in the configuration entry.
         @param lineno: The line number at which the entry resides in the configuration file.
         @return: Dictionary containing the rule.
@@ -73,14 +75,16 @@ class VolatilityProcessorRuleLoader:
             protoList = ["TCP", "UDP", "*"]
             cls.regexps['protoList'] = protoList
 
-        rule = {'path' : line[0],
-                'filename' : os.path.split(line[0])[1],
-                'protocol' : line[1].upper(),
-                'source port' : line[2],
-                'ip' : line[3] }
+        rule = {'path': line[0],
+                'filename': os.path.split(line[0])[1],
+                'protocol': line[1].upper(),
+                'source port': line[2],
+                'ip': line[3]}
 
-        if len(line) > 4: rule["destination port"] = line[4]
-        else: rule["destination port"] = ""
+        if len(line) > 4:
+            rule["destination port"] = line[4]
+        else:
+            rule["destination port"] = ""
 
         if rule.get('source port') == "*":
             rule['source port'] = '0-65535'
@@ -109,10 +113,10 @@ class VolatilityProcessorRuleLoader:
         return rule
 
     @classmethod
-    def runningServicesLine(cls, line, lineno = 0):
+    def runningServicesLine(cls, line, lineno=0):
         '''
         Processes a 'running services' configuration entry into a valid configuration rule.
-        If an invalid entry is found then a ParameterException is raised. 
+        If an invalid entry is found then a ParameterException is raised.
         @param line: The list with the arguments found in the configuration entry.
         @param lineno: The line number at which the entry resides in the configuration file.
         @return: Dictionary containing the rule.
@@ -139,10 +143,10 @@ class VolatilityProcessorRuleLoader:
                 '*']
             cls.regexps['serviceStateList'] = serviceStateList
 
-        rule = {'pid' : line[0],
-                'name' : line[1],
-                'state' : line[2].upper(),
-                'path' : ' '.join(line[3:]) }
+        rule = {'pid': line[0],
+                'name': line[1],
+                'state': line[2].upper(),
+                'path': ' '.join(line[3:])}
 
         if not pidRegexp.match(rule['pid']):
             raise ParameterException("Invalid pid in line %d" % lineno)
@@ -152,17 +156,17 @@ class VolatilityProcessorRuleLoader:
         return rule
 
     @classmethod
-    def apiHooksLine(cls, line, lineno = 0):
+    def apiHooksLine(cls, line, lineno=0):
         '''
         Processes a 'api hooks' configuration entry into a valid configuration rule.
-        If an invalid entry is found then a ParameterException is raised. 
+        If an invalid entry is found then a ParameterException is raised.
         @param line: The list with the arguments found in the configuration entry.
         @param lineno: The line number at which the entry resides in the configuration file.
         @return: Dictionary containing the rule.
         '''
         if len(line) != 1:
             raise ParameterException("Invalid configuration entry in line %d" % lineno)
-        rule = {'path' : line[0]}
+        rule = {'path': line[0]}
         return rule
 
     @classmethod
@@ -220,20 +224,20 @@ if __name__ == "__main__":
         print 'argparse module not found. Install to use command line checker.'
         sys.exit(1)
     parser = argparse.ArgumentParser(
-        description = 'Cuckoo volatility processor - configuration checker.',
-        formatter_class = argparse.ArgumentDefaultsHelpFormatter,
+        description='Cuckoo volatility processor - configuration checker.',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument('type', help = 'type of configuration to check', choices = ['connected_processes', 'running_services', 'api_hooks'])
-    parser.add_argument('file', help = 'path to the configuration file')
+    parser.add_argument('type', help='type of configuration to check', choices=['connected_processes', 'running_services', 'api_hooks'])
+    parser.add_argument('file', help='path to the configuration file')
     args = parser.parse_args()
     verifiers = {
-        'connected_processes' : VolatilityProcessorRuleLoader.connectedProcessLine,
-        'running_services' : VolatilityProcessorRuleLoader.runningServicesLine,
-        'api_hooks' : VolatilityProcessorRuleLoader.apiHooksLine
-        }
+        'connected_processes': VolatilityProcessorRuleLoader.connectedProcessLine,
+        'running_services': VolatilityProcessorRuleLoader.runningServicesLine,
+        'api_hooks': VolatilityProcessorRuleLoader.apiHooksLine
+    }
     vtype = verifiers.get(args.type)
     try:
-        results = VolatilityProcessorRuleLoader.load(filePath = args.file, verifier = vtype)
+        results = VolatilityProcessorRuleLoader.load(filePath=args.file, verifier=vtype)
         print "Number of rules loaded: %d." % len(results)
         for result in results:
             print 'rule:', result

@@ -1,9 +1,9 @@
 #!/usr/bin/python -tt
 
 # Copyright (c) NASK, NCSC
-# 
+#
 # This file is part of HoneySpider Network 2.0.
-# 
+#
 # This is a free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -17,21 +17,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-'''
-Created on 20-07-2012
-
-@author: wojciechm
-'''
-
-import re
 import os
+import re
 import sys
+
 
 class ParameterException(Exception):
     pass
 
+
 class ProcMonProcessorRuleLoader:
-    regexps = {}
 
     @staticmethod
     def toRating(val, lineno):
@@ -45,20 +40,20 @@ class ProcMonProcessorRuleLoader:
             raise ParameterException("Invalid rating value in line %d" % (lineno))
 
     @classmethod
-    def procmonLine(cls, line, lineno = 0):
+    def procmonLine(cls, line, lineno=0):
         '''
         Processes a 'procmon' configuration entry into a valid configuration rule.
-        If an invalid entry is found then a ParameterException is raised. 
+        If an invalid entry is found then a ParameterException is raised.
         @param line: The list with the arguments found in the configuration entry.
         @param lineno: The line number at which the entry resides in the configuration file.
         @return: Dictionary containing the rule.
         '''
         if len(line) != 3:
             raise ParameterException("Invalid configuration entry in line %d" % lineno)
-        rule = {'rating' : cls.toRating(line[0], lineno),
-                'operation' : line[1],
-                'path' : line[2]
-            }
+        rule = {'rating': cls.toRating(line[0], lineno),
+                'operation': line[1],
+                'path': line[2]
+                }
         return rule
 
     @classmethod
@@ -98,16 +93,16 @@ if __name__ == "__main__":
         print 'argparse module not found. Install to use command line checker.'
         sys.exit(1)
     parser = argparse.ArgumentParser(
-        description = 'Cuckoo procmon processor - configuration checker.',
-        formatter_class = argparse.ArgumentDefaultsHelpFormatter,
+        description='Cuckoo procmon processor - configuration checker.',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument('file', help = 'path to the configuration file')
+    parser.add_argument('file', help='path to the configuration file')
     args = parser.parse_args()
     vtype = ProcMonProcessorRuleLoader.procmonLine
     try:
-        results = ProcMonProcessorRuleLoader.load(filePath = args.file, verifier = vtype)
+        results = ProcMonProcessorRuleLoader.load(filePath=args.file, verifier=vtype)
         print "Number of rules loaded: %d." % len(results)
         for result in results:
             print 'rule:', result
     except Exception as e:
-        print "Exception: ", e
+        print "Exception:", e

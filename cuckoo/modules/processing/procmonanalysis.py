@@ -1,7 +1,7 @@
 # Copyright (c) NASK, NCSC
-# 
+#
 # This file is part of HoneySpider Network 2.0.
-# 
+#
 # This is a free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -31,24 +31,28 @@ from lib.cuckoo.common.constants import CUCKOO_ROOT
 from lib.cuckoo.common.config import Config as CuckooConfig
 from lib.cuckoo.common.abstracts import Processing
 
-sys.path.append(os.path.join(CUCKOO_ROOT, 'conf', 'procmon'))
+RULE_PATH = os.path.join(CUCKOO_ROOT, 'conf', 'procmon')
+
+sys.path.append(RULE_PATH)
 from procmonprocessorrulelloader import ProcMonProcessorRuleLoader as pprl
 
 log = logging.getLogger(__name__)
+
 
 class ProcMonAnalysis(Processing):
     """ProcMon CSV log analysis."""
     analysisConfig = None
     csvLog = None
-    rulePath = os.path.join(CUCKOO_ROOT, 'conf', 'procmon')
-    params = {
-        "behavioral_importance" : 1,
-        "none" : 0
-    }
-
-    rules = {}
+    rulePath = RULE_PATH
+    params = None
+    rules = None
 
     def __init__(self):
+        self.params = {
+            "behavioral_importance": 1,
+            "none": 0
+        }
+        self.rules = {}
         self.key = "procmon"
 
     def preConfigure(self):
@@ -140,12 +144,12 @@ class ProcMonAnalysis(Processing):
                         objects[line[2]]["summed_rating"] += rule["rating"] * multiplier
                         objects[line[2]][cause] += rule["rating"] * multiplier
                     except KeyError:
-                        objects[line[2]] = {"summed_rating":rule["rating"] * multiplier, cause:rule["rating"] * multiplier}
+                        objects[line[2]] = {"summed_rating": rule["rating"] * multiplier, cause: rule["rating"] * multiplier}
         return objects
 
 if __name__ == "__main__":
     logFormatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
-    consoleHandler = logging.StreamHandler(stream = sys.stderr)
+    consoleHandler = logging.StreamHandler(stream=sys.stderr)
     consoleHandler.setFormatter(logFormatter)
     log.addHandler(consoleHandler)
     log.setLevel(logging.DEBUG)
