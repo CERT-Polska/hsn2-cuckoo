@@ -1,8 +1,13 @@
-Package: hsn2-cuckoo
-Version: {VER}
-Section: unknown
+Source: python-hsn2-cuckoo
+Section: python
 Priority: optional
+Maintainer: CERT Polska <info@cert.pl>
+Build-Depends: debhelper (>= 8.0.0), python-all (>= 2.6.6-3), python-setuptools
+Standards-Version: 3.9.3
+X-Python-Version: >= 2.6
+
+Package: python-hsn2-cuckoo
 Architecture: all
-Depends: python, python-hsn2-lib
-Maintainer: Wojciech Michalak (wojciech.michalak@nask.pl)
+Depends: ${misc:Depends}, ${python:Depends}, python-hsn2-commons, python-yara
+Provides: ${python:Provides}
 Description: HSN2 Cuckoo Service. It utilises the Cuckoo Sandbox. Cuckoo has to be installed and configured separately.

@@ -1,0 +1,11 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_clean:
+	rm -rf *.egg-info
+	dh_auto_clean
+
+override_dh_installinit:
+	dh_installinit --name=hsn2-cuckoo
